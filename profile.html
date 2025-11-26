@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kolabohub - Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <div class="dashboard-wrapper">
+    
+    <nav class="navbar-modern">
+      <div class="container-fluid px-0 d-flex justify-content-between">
+        <a class="navbar-brand-text text-decoration-none" href="#">
+            <img src="./assets/Images/Logo.png" alt="Logo" style="width: 190px; margin-right: 12px;">
+            Kolabohub
+        </a>
+        <div class="d-flex align-items-center">
+            <a class="nav-link-modern" href="index.html">Home</a>
+            <a class="nav-link-modern" href="myproject.html">Project</a>
+            <a class="nav-link-modern" href="rewards.html">Rewards</a>
+            <a class="nav-link-modern active" href="profile.html">Profile</a>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <a class="text-danger text-decoration-none fw-bold small" href="#" id="logoutBtn">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- GRID PROFILE (Kiri Sidebar, Kanan Main) -->
+    <div class="profile-layout">
+        
+        <!-- Sidebar Kiri -->
+        <div class="card-modern text-center" style="background: #F8FBFF; border: 1px solid #E9EDF7;">
+            <div class="position-relative d-inline-block mb-3">
+                <img src="https://placehold.co/150x150/4318FF/ffffff?text=U" class="rounded-circle shadow" alt="Avatar" style="width: 120px; height: 120px; border: 4px solid white;">
+                <button class="btn btn-sm btn-light shadow-sm position-absolute bottom-0 end-0 rounded-circle" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    <i class="bi bi-pencil-fill text-primary"></i>
+                </button>
+            </div>
+            
+            <h4 class="fw-bold text-dark mb-1" id="profileName">Loading...</h4>
+            <p class="text-muted small mb-4" id="profileEmail">...</p>
+
+            <div class="bg-white p-3 rounded-3 border mb-4 text-start shadow-sm">
+                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Referral Code</small>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="fw-bold fs-5 text-primary" id="myReferralCode">...</span>
+                    <i class="bi bi-copy text-muted" style="cursor:pointer" onclick="copyReferral()"></i>
+                </div>
+            </div>
+
+            <div class="d-grid gap-3">
+                <div class="bg-white p-3 rounded-3 border shadow-sm">
+                    <h3 class="fw-bold text-primary mb-0" id="profilePoints">0</h3>
+                    <small class="text-muted fw-bold">Total Points</small>
+                </div>
+                <div class="bg-white p-3 rounded-3 border shadow-sm">
+                    <h3 class="fw-bold text-dark mb-0" id="profileLevel">1</h3>
+                    <small class="text-muted fw-bold">Level</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Konten Kanan -->
+        <div class="card-modern">
+            <h5 class="fw-bold text-primary-dark mb-4">Pencapaian & Badge</h5>
+            <div id="badgesContainer" class="d-flex flex-wrap gap-2 mb-5">
+                <span class="text-muted small">Memuat...</span>
+            </div>
+
+            <h5 class="fw-bold text-primary-dark mb-3">Riwayat Aktivitas</h5>
+            <div class="overflow-hidden">
+                <ul id="historyContainer" class="list-group list-group-flush">
+                    <li class="list-group-item border-0 text-muted py-3">Memuat riwayat...</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+  </div>
+
+  <!-- Modal Edit -->
+  <div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow rounded-4">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">Edit Profile</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label text-muted small fw-bold">Nama Lengkap</label>
+          <input type="text" id="inputEditName" class="form-control-modern">
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary-modern" id="btnSaveProfile">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="./assets/js/firebase-config.js"></script>
+  <script type="module" src="./assets/js/auth.js"></script>
+  <script type="module" src="./assets/js/profile.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kolabohub - My Projects</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+
+  <div class="dashboard-wrapper">
+    
+    <!-- Navbar -->
+    <nav class="navbar-modern">
+      <div class="container-fluid px-0 d-flex justify-content-between">
+        <a class="navbar-brand-text text-decoration-none" href="#">
+            <img src="./assets/Images/Logo.png" alt="Logo" style="width: 190px; margin-right: 12px;">
+            Kolabohub
+        </a>
+        <div class="d-flex align-items-center">
+            <a class="nav-link-modern" href="index.html">Home</a>
+            <a class="nav-link-modern active" href="myproject.html">Project</a>
+            <a class="nav-link-modern" href="rewards.html">Rewards</a>
+            <a class="nav-link-modern" href="profile.html">Profile</a>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="fw-bold text-warning-kolabo" id="navbarPoints">0 Poin</span>
+            <a class="text-danger text-decoration-none fw-bold small" href="#" id="logoutBtn">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="mb-4">
+        <h2 class="fw-bold text-primary-dark">My Projects</h2>
+        <p class="text-muted">Kelola semua proyek kolaborasimu di sini.</p>
+    </div>
+
+    <!-- GRID FORM (Kiri: Create, Kanan: Join) -->
+    <div class="project-form-grid">
+        
+        <!-- Create Project Card -->
+        <div class="card-modern">
+            <h5 class="fw-bold mb-3 text-primary-kolabo"><i class="bi bi-folder-plus me-2"></i> Buat Proyek Baru</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="small text-muted fw-bold mb-1">Nama Proyek</label>
+                    <input id="projectName" class="form-control-modern" placeholder="Mis: Web Redesign">
+                </div>
+                <div class="col-md-6">
+                    <label class="small text-muted fw-bold mb-1">Deskripsi</label>
+                    <input id="projectDesc" class="form-control-modern" placeholder="Deskripsi singkat...">
+                </div>
+                <div class="col-12 text-end">
+                    <button id="btnCreateProject" class="btn btn-primary-modern">
+                        <i class="bi bi-plus-lg me-1"></i> Buat Proyek
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Join Project Card -->
+        <div class="card-modern" style="background-color: #E9EDF7;">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-people-fill me-2"></i> Gabung Tim</h5>
+            <label class="small text-muted fw-bold mb-1">Kode Undangan</label>
+            <div class="d-flex gap-2">
+                <input id="joinCode" class="form-control-modern bg-white" placeholder="Kode Proyek">
+                <button id="btnJoinProject" class="btn btn-success fw-bold px-4" style="border-radius: 12px;">Join</button>
+            </div>
+            <small class="text-muted mt-2 d-block" style="font-size: 0.8rem;">Minta kode proyek dari ketua tim Anda.</small>
+        </div>
+
+    </div>
+
+    <!-- Project List -->
+    <h5 class="fw-bold mb-3 text-secondary">Daftar Proyek Aktif</h5>
+    <div id="projectList" class="project-list-grid">
+        <div class="text-center text-muted col-12 py-5">Memuat proyek...</div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="./assets/js/firebase-config.js"></script>
+  <script type="module" src="./assets/js/auth.js"></script>
+  <script type="module" src="./assets/js/myproject.js"></script>
+
+</body>
+</html>

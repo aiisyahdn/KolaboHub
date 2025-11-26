@@ -1,0 +1,355 @@
+/* IMPORT FONT POPPINS */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* --- GLOBAL VARIABLES (SOFT THEME) --- */
+:root {
+    --primary-color: #4318FF; 
+    --primary-dark: #2B3674;
+    --primary-light: #E9EDF7; 
+    --secondary-color: #FFB547; 
+    --success-color: #05CD99;
+    --bg-body: #F4F7FE; 
+    --bg-card: #FFFFFF;
+    --text-main: #2B3674;
+    --text-secondary: #707EAE;
+    --card-radius: 20px;
+    --card-shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    --input-bg: #F9F9F9;
+}
+
+body {
+    background-color: var(--bg-body);
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-main);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    margin: 0; padding: 0; overflow-x: hidden;
+}
+
+/* --- CONTAINER UTAMA --- */
+.dashboard-wrapper {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 20px 40px;
+}
+
+/* --- NAVBAR --- */
+.navbar-modern {
+    background: transparent;
+    padding: 20px 0 30px 0;
+}
+.navbar-brand-text {
+    font-weight: 700; font-size: 2rem; color: #2352B2 !important;
+    display: flex; align-items: center; letter-spacing: -0.5px; align-content: flex-start;
+}
+.nav-link-modern {
+    color: var(--text-secondary) !important; font-weight: 500; margin: 0 15px; transition: 0.3s; font-size: larger; align-items: center;
+}
+.nav-link-modern:hover, .nav-link-modern.active {
+    color: var(--primary-color) !important; font-weight: 700;
+}
+
+/* --- LAYOUT SYSTEMS (PERBAIKAN UTAMA) --- */
+
+/* 1. Dashboard Grid (2 Kolom: Main & Sidebar) */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 3fr 1.2fr; /* Kiri lebih lebar */
+    gap: 30px;
+    align-items: start;
+}
+
+/* 2. Profile Grid (2 Kolom: Sidebar Profil & Main Content) */
+.profile-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr; /* Kiri tetap 350px, Kanan sisa */
+    gap: 30px;
+    align-items: start;
+}
+
+/* 3. My Project Grid (2 Kolom untuk Form) */
+.project-form-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr; /* Form Buat lebih lebar dari Join */
+    gap: 30px;
+    align-items: stretch; /* Tinggi sama */
+    margin-bottom: 40px;
+}
+
+/* 4. Project List Grid (Kartu-kartu Proyek) */
+.project-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+/* 5. Kanban Board (3 Kolom Sejajar) */
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 Kolom dengan lebar sama */
+    gap: 25px;
+    align-items: start;
+}
+
+/* --- COMPONENTS --- */
+
+/* Cards */
+.card-modern {
+    background: var(--bg-card);
+    border-radius: var(--card-radius);
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: none;
+    height: 100%;
+}
+
+/* Hero Card */
+.hero-card {
+    background: linear-gradient(135deg, #868CFF 0%, #4318FF 100%);
+    color: white;
+    border-radius: var(--card-radius);
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0px 18px 40px rgba(67, 24, 255, 0.2);
+}
+.hero-title { font-size: 3rem; font-weight: 700; margin: 10px 0; line-height: 1.2;}
+
+/* Bottom Grid di Dashboard (Poin & Active Project) */
+.bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+}
+
+/* Elements */
+.points-value { font-size: 3.5rem; font-weight: 700; color: var(--primary-color); line-height: 1; margin: 15px 0; }
+.card-label { font-size: 1.1rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 15px; }
+
+.btn-view-more {
+    background: var(--primary-light); color: var(--primary-color);
+    font-weight: 600; padding: 12px; border-radius: 12px; text-decoration: none;
+    display: block; text-align: center; transition: 0.3s;
+}
+.btn-view-more:hover { background: #dce4f9; color: var(--primary-dark); }
+
+/* Project Circles */
+.projects-container { display: flex; justify-content: space-around; padding: 15px 0; }
+.circle-placeholder {
+    width: 60px; height: 60px; border-radius: 50%; background: var(--bg-body);
+    margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; color: var(--primary-color);
+}
+.circle-1 { color: #4318FF; background: #F4F7FE; }
+.circle-2 { color: #05CD99; background: #F4F7FE; }
+.circle-3 { color: #FFB547; background: #F4F7FE; }
+
+/* Sidebar Feed */
+.feed-item { display: flex; gap: 15px; margin-bottom: 20px; }
+.feed-icon {
+    width: 40px; height: 40px; border-radius: 12px; background: var(--primary-light);
+    color: var(--primary-color); display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+}
+
+/* Form Controls */
+.form-control-modern {
+    background: var(--input-bg); border: 1px solid transparent;
+    padding: 12px 15px; border-radius: 12px; font-size: 0.95rem; color: var(--primary-dark);
+}
+.form-control-modern:focus { background: #fff; border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.1); }
+.btn-primary-modern {
+    background: var(--primary-color); color: white; padding: 12px 24px;
+    border-radius: 12px; font-weight: 600; border: none; transition: 0.2s;
+}
+.btn-primary-modern:hover { background: #3311CC; transform: translateY(-2px); }
+
+/* Reward Card */
+.reward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
+.reward-card {
+    background: white; border-radius: var(--card-radius); overflow: hidden;
+    box-shadow: var(--card-shadow); transition: transform 0.2s; display: flex; flex-direction: column;
+}
+.reward-card:hover { transform: translateY(-5px); }
+.reward-img { width: 100%; height: 160px; object-fit: cover; }
+.reward-body { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+
+/* AUTH PAGES (Login/Register) */
+body.auth-body {
+    background-color: var(--bg-body);
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.auth-wrapper {
+    background: #FFFFFF;
+    border-radius: 40px; /* Radius lebih besar biar modern */
+    box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+    padding: 0; /* Reset padding wrapper, kita atur per sisi */
+    width: 100%; 
+    max-width: 1200px; /* Lebarkan container utama */
+    display: flex; 
+    overflow: hidden; /* Agar background kiri tidak bocor */
+    min-height: 700px; /* Tinggi minimum agar tidak gepeng */
+}
+
+.auth-row {
+    display: flex; 
+    width: 100%; 
+    height: 100%;
+}
+
+/* Bagian Kiri (Biru / Ilustrasi) */
+.auth-left {
+    flex: 1.2; /* Lebih lebar sedikit dari form */
+    background-color: #F4F7FE; /* Background soft blue */
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+/* Bagian Kanan (Form Putih) */
+.auth-right {
+    flex: 1;
+    background-color: #FFFFFF;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Elemen di Kiri */
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Jarak pas antara logo dan teks */
+    margin-bottom: 40px;
+}
+
+.auth-logo {
+    width: 50px;
+    height: auto;
+}
+
+.auth-brand-text {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: -0.5px;
+    line-height: 1;
+}
+
+.auth-title { 
+    font-size: 3rem; 
+    color: var(--primary-dark); 
+    font-weight: 700; 
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.auth-desc { 
+    font-size: 1.1rem; 
+    color: var(--text-secondary); 
+    margin-bottom: 40px;
+    max-width: 80%; 
+}
+
+.auth-illustration { 
+    width: 100%; 
+    max-width: 450px; /* Perbesar ilustrasi */
+    height: auto;
+    display: block; 
+    margin: 0 auto;
+    /* animation: float 6s ease-in-out infinite; */
+}
+
+/* Elemen di Kanan (Form) */
+.auth-card-modern { 
+    width: 100%; 
+    max-width: 400px; /* Batasi lebar form agar rapi di tengah */
+    margin: 0 auto;
+}
+
+.auth-card-title { 
+    font-weight: 700; 
+    font-size: 2rem; 
+    color: var(--primary-dark); 
+    margin-bottom: 10px; 
+}
+
+.form-label-modern {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-control-modern {
+    background: var(--input-bg); 
+    border: 1px solid transparent;
+    padding: 15px 20px; 
+    border-radius: 16px; 
+    font-size: 1rem; 
+    color: var(--primary-dark);
+    width: 100%;
+    transition: all 0.3s;
+}
+
+.form-control-modern:focus {
+    background: #fff; 
+    border-color: var(--primary-color); 
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(67, 24, 255, 0.1);
+}
+
+.btn-auth-modern {
+    background: var(--primary-color); 
+    color: white; 
+    padding: 16px;
+    border-radius: 16px; 
+    font-weight: 600; 
+    font-size: 1.1rem; 
+    width: 100%; 
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 20px;
+}
+
+.btn-auth-modern:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(67, 24, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .auth-wrapper { flex-direction: column; min-height: auto; height: auto; }
+    .auth-left { padding: 40px 30px; text-align: center; align-items: center; }
+    .auth-right { padding: 40px 30px; }
+    .brand-container { justify-content: center; }
+    .auth-title { font-size: 2.2rem; }
+    .auth-desc { max-width: 100%; margin-bottom: 30px; }
+}
+/* UTILS */
+.text-primary-kolabo { color: var(--primary-color) !important; }
+.text-warning-kolabo { color: var(--secondary-color) !important; }
+
+/* --- RESPONSIF --- */
+/* Hanya stack ke bawah jika layar SANGAT kecil (Tablet Portrait / Mobile) */
+@media (max-width: 991px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .profile-layout { grid-template-columns: 1fr; }
+    .project-form-grid { grid-template-columns: 1fr; }
+    .kanban-board { grid-template-columns: 1fr; }
+    .auth-wrapper { flex-direction: column; text-align: center; }
+    .auth-row { flex-direction: column; }
+}
