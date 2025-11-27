@@ -12,7 +12,6 @@ import {
   doc, setDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Ambil elemen navbar
 const authNav = document.getElementById("authNavigation");
 const loginNav = document.getElementById("loginNavigation");
 
@@ -26,15 +25,13 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Helper: Generate Kode Referral Acak
 function generateReferralCode(name) {
     const prefix = (name || "USR").substring(0, 3).toUpperCase().replace(/\s/g, '');
     const randomNum = Math.floor(100 + Math.random() * 900);
     return prefix + randomNum; 
 }
 
-// Fungsi Simpan User Baru ke Firestore
-async function saveUserToFirestore(user) {
+async function checkAndRedirect(user) {
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -43,91 +40,89 @@ async function saveUserToFirestore(user) {
         await setDoc(userRef, {
             name: user.displayName || "User",
             email: user.email,
-            points: 0,
+            points: 0,          // Poin Aktif (Bisa berkurang)
+            lifetimePoints: 0,  // Poin Abadi (Untuk Level)
             level: 1,
             badges: [],
             myReferralCode: myCode,
             redeemedReferral: false,
             createdAt: new Date()
         });
+        window.location.href = "referral.html";
+    } else {
+        const data = userSnap.data();
+        
+        // Migrasi Data Lama (Jika lifetimePoints belum ada)
+        if (data.lifetimePoints === undefined) {
+            await setDoc(userRef, { lifetimePoints: data.points || 0 }, { merge: true });
+        }
+
+        if (data.redeemedReferral === false) {
+            window.location.href = "referral.html";
+        } else {
+            window.location.href = "index.html";
+        }
     }
 }
 
-// REGISTER BIASA
+// REGISTER
 export async function registerUser(event) {
   event.preventDefault();
-
   const nameInput = document.getElementById("name");
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
 
   if (!nameInput || !emailInput || !passwordInput) return;
 
-  const name = nameInput.value;
-  const email = emailInput.value;
-  const password = passwordInput.value;
-
   try {
-    const userCred = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(userCred.user, { displayName: name });
-    await saveUserToFirestore(userCred.user);
-
-    alert("Register sukses! Anda akan diarahkan ke Dashboard.");
-    window.location.href = "index.html";
+    const userCred = await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+    await updateProfile(userCred.user, { displayName: nameInput.value });
+    await checkAndRedirect(userCred.user);
   } catch (error) {
     console.error(error);
     alert("Gagal Register: " + error.message);
   }
 }
 
-// LOGIN BIASA
+// LOGIN
 export async function loginUser(event) {
   event.preventDefault();
-  
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
 
   if (!emailInput || !passwordInput) return;
 
   try {
-    await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-    window.location.href = "index.html";
+    const userCred = await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+    await checkAndRedirect(userCred.user);
   } catch (error) {
     console.error(error);
-    alert("Email atau password salah! Coba lagi.");
+    alert("Email atau password salah!");
   }
 }
 
-// LOGIN DENGAN GOOGLE (Hanya Google)
+// GOOGLE LOGIN
 export async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        await saveUserToFirestore(result.user); 
-        window.location.href = "index.html";
+        await checkAndRedirect(result.user);
     } catch (error) {
         console.error("Google Login Error:", error);
         alert("Gagal login dengan Google: " + error.message);
     }
 }
 
-// LOGOUT
 export function logoutUser() {
-  const confirm = window.confirm("Yakin ingin keluar?");
-  if(confirm) {
-      signOut(auth).then(() => {
-          window.location.href = "login.html";
-      });
+  if(confirm("Yakin ingin keluar?")) {
+      signOut(auth).then(() => { window.location.href = "login.html"; });
   }
 }
 
-// Event Listeners
 document.getElementById("registerForm")?.addEventListener("submit", registerUser);
 document.getElementById("loginForm")?.addEventListener("submit", loginUser);
 document.getElementById("logoutBtn")?.addEventListener("click", (e) => {
     e.preventDefault();
     logoutUser();
 });
-
-// Listener Tombol Google
 document.getElementById("btnGoogle")?.addEventListener("click", loginWithGoogle);

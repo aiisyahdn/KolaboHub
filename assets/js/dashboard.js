@@ -12,7 +12,7 @@ let currentUserName = "User";
 function loadDashboardData(uid) {
     const userRef = doc(db, "users", uid);
     
-    // Listener User Data
+    // 1. Listener Data User (Poin & Nama)
     onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -25,6 +25,7 @@ function loadDashboardData(uid) {
             if (dashboardPointsEl) dashboardPointsEl.textContent = points;
             if (welcomeNameEl) welcomeNameEl.textContent = currentUserName;
 
+            // Cek Referral
             if (data.redeemedReferral === false) {
                 const modalEl = document.getElementById('referralModal');
                 if (modalEl) {
@@ -41,9 +42,10 @@ function loadDashboardData(uid) {
     
     loadActiveProjectsWidget(uid);
     loadSidebarActivities();
+    loadCurrentTaskWidget(uid); // Fungsi Baru!
 }
 
-// Render Lingkaran Proyek (Updated Style)
+// 2. Render Lingkaran Proyek (Updated Style)
 async function loadActiveProjectsWidget(uid) {
     const container = document.getElementById('activeProjectsContainer');
     if (!container) return;
@@ -80,7 +82,7 @@ async function loadActiveProjectsWidget(uid) {
     }
 }
 
-// Render Aktivitas Sidebar (Updated Style)
+// 3. Render Aktivitas Sidebar (Updated dengan Nama User)
 function loadSidebarActivities() {
     const container = document.getElementById('activityListContainer');
     if (!container) return;
@@ -111,15 +113,94 @@ function loadSidebarActivities() {
                     <div class="feed-icon" style="background-color: ${bgClass}; color: ${textClass};">
                         <i class="bi ${iconClass}"></i>
                     </div>
-                    <div class="feed-content">
-                        <h6 class="text-truncate" style="max-width: 180px;" title="${data.text}">${data.text}</h6>
-                        <small>${time}</small>
+                    <div class="feed-content w-100">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-dark" style="font-size: 0.9rem;">${data.userName || 'User'}</span>
+                            <small class="text-muted" style="font-size: 0.7rem;">${time}</small>
+                        </div>
+                        <p class="text-secondary small mb-0" style="line-height: 1.4; font-size: 0.8rem;">
+                            ${data.text}
+                        </p>
                     </div>
                 </div>
             `;
         });
     });
 }
+
+// 4. FUNGSI BARU: Render Current Task Widget
+// Mencari tugas 'doing' pertama yang ditemukan dari proyek user
+async function loadCurrentTaskWidget(uid) {
+    const taskTitleEl = document.getElementById('currentTaskTitle');
+    const taskProgressEl = document.getElementById('currentTaskProgress');
+    const taskProgressBar = document.getElementById('currentTaskProgressBar');
+    const taskProjectEl = document.getElementById('currentTaskProject');
+
+    // Pastikan elemen ada di HTML (jika belum, harus ditambahkan ID-nya di index.html)
+    if (!taskTitleEl) return; 
+
+    try {
+        // Ambil semua proyek user
+        const projectsQuery = query(collection(db, "projects"), where("members", "array-contains", uid));
+        const projectsSnap = await getDocs(projectsQuery);
+
+        if (projectsSnap.empty) {
+            setNoTaskState();
+            return;
+        }
+
+        let foundTask = null;
+        let foundProjectName = "";
+
+        // Loop setiap proyek untuk cari tugas 'doing' (Agak berat tapi solusi termudah tanpa collectionGroup index)
+        // Idealnya menggunakan collectionGroup query jika index sudah di-setup di Firebase Console
+        for (const projectDoc of projectsSnap.docs) {
+            const tasksQuery = query(
+                collection(db, "projects", projectDoc.id, "tasks"), 
+                where("status", "==", "doing"),
+                where("userId", "==", uid), // Hanya tugas milik user ini (opsional) atau semua tugas tim
+                limit(1)
+            );
+            
+            // Catatan: Jika ingin menampilkan tugas tim, hapus `where("userId", "==", uid)`
+            // Di sini kita asumsikan "Current Task" adalah tugas yang sedang dikerjakan OLEH USER SAYA
+            
+            const tasksSnap = await getDocs(tasksQuery);
+            if (!tasksSnap.empty) {
+                foundTask = tasksSnap.docs[0].data();
+                foundProjectName = projectDoc.data().name;
+                break; // Ketemu satu, stop searching
+            }
+        }
+
+        if (foundTask) {
+            taskTitleEl.textContent = foundTask.title;
+            taskProjectEl.textContent = foundProjectName;
+            
+            // Logika Progress Simulasi:
+            // Todo = 0%, Doing = 50%, Done = 100%
+            // Karena ini 'doing', kita set 50% atau 75% biar terlihat progress
+            const progressVal = "50%"; 
+            
+            if(taskProgressEl) taskProgressEl.textContent = progressVal;
+            if(taskProgressBar) taskProgressBar.style.width = progressVal;
+        } else {
+            setNoTaskState();
+        }
+
+    } catch (err) {
+        console.error("Error loading current task:", err);
+        setNoTaskState();
+    }
+
+    function setNoTaskState() {
+        taskTitleEl.textContent = "Tidak ada tugas aktif";
+        if(taskProjectEl) taskProjectEl.textContent = "-";
+        if(taskProgressEl) taskProgressEl.textContent = "0%";
+        if(taskProgressBar) taskProgressBar.style.width = "0%";
+    }
+}
+
 
 function setupReferralLogic(uid, myName, modalInstance) {
     const btnClaim = document.getElementById('btnClaimReferral');
@@ -162,8 +243,18 @@ function setupReferralLogic(uid, myName, modalInstance) {
             try {
                 btnClaim.disabled = true; btnClaim.textContent = "...";
                 
-                await updateDoc(doc(db, "users", ownerId), { points: increment(50) });
-                await updateDoc(doc(db, "users", uid), { points: increment(25), redeemedReferral: true });
+                // Tambah Points & Lifetime Points ke Pemilik Kode
+                await updateDoc(doc(db, "users", ownerId), { 
+                    points: increment(50),
+                    lifetimePoints: increment(50) 
+                });
+
+                // Tambah Points & Lifetime Points ke User Baru
+                await updateDoc(doc(db, "users", uid), { 
+                    points: increment(25),
+                    lifetimePoints: increment(25), 
+                    redeemedReferral: true 
+                });
 
                 modalInstance.hide();
                 alert(`Sukses! +25 Poin untukmu.`);
