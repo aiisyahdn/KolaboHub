@@ -353,3 +353,39 @@ body.auth-body {
     .auth-wrapper { flex-direction: column; text-align: center; }
     .auth-row { flex-direction: column; }
 }
+/* =========================================
+   AREA KHUSUS MOBILE (HP)
+   Kode di bawah ini TIDAK akan mengganggu Laptop
+   ========================================= */
+   @media only screen and (max-width: 768px) {
+
+    /* 1. Mencegah website melebar ke samping (Horizontal Scroll) */
+    html, body {
+        overflow-x: hidden; /* Potong apapun yang keluar jalur */
+        width: 100%;
+        position: relative;
+    }
+
+    /* 2. Memperbaiki Wadah Utama agar pas di layar HP */
+    .container, .main-content, .wrapper {
+        width: 100% !important; /* Paksa lebar mengikuti layar HP */
+        min-width: 0 !important; /* Hapus batasan lebar minimum */
+        padding-left: 15px !important; /* Beri jarak napas kiri */
+        padding-right: 15px !important; /* Beri jarak napas kanan */
+        box-sizing: border-box;
+    }
+
+    /* 3. Menjinakkan Navbar yang 'Keras Kepala' */
+    /* Ini membuat menu navbar tidak maksa berjejer ke samping */
+    nav, .navbar, header {
+        width: 100% !important;
+        flex-wrap: wrap; /* Izinkan menu turun ke bawah jika sempit */
+        padding: 10px !important;
+    }
+
+    /* 4. Memastikan Gambar tidak lebih besar dari layar HP */
+    img {
+        max-width: 100% !important;
+        height: auto;
+    }
+}
