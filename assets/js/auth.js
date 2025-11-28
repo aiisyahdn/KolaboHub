@@ -31,38 +31,35 @@ function generateReferralCode(name) {
     return prefix + randomNum; 
 }
 
-async function checkAndRedirect(user) {
+// Helper: Setup User Baru & Redirect ke Dashboard
+async function handleUserLogin(user) {
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
+    // Jika user baru, buat data awal
     if (!userSnap.exists()) {
         const myCode = generateReferralCode(user.displayName || user.email);
         await setDoc(userRef, {
             name: user.displayName || "User",
             email: user.email,
-            points: 0,          // Poin Aktif (Bisa berkurang)
-            lifetimePoints: 0,  // Poin Abadi (Untuk Level)
+            points: 0,
+            lifetimePoints: 0,
             level: 1,
             badges: [],
             myReferralCode: myCode,
             redeemedReferral: false,
             createdAt: new Date()
         });
-        window.location.href = "referral.html";
     } else {
+        // Migrasi untuk user lama yg belum punya lifetimePoints
         const data = userSnap.data();
-        
-        // Migrasi Data Lama (Jika lifetimePoints belum ada)
         if (data.lifetimePoints === undefined) {
             await setDoc(userRef, { lifetimePoints: data.points || 0 }, { merge: true });
         }
-
-        if (data.redeemedReferral === false) {
-            window.location.href = "referral.html";
-        } else {
-            window.location.href = "index.html";
-        }
     }
+
+    // PERBAIKAN: Langsung ke Dashboard (index.html), jangan ke referral.html
+    window.location.href = "index.html";
 }
 
 // REGISTER
@@ -75,12 +72,23 @@ export async function registerUser(event) {
   if (!nameInput || !emailInput || !passwordInput) return;
 
   try {
+    // Ubah tombol jadi loading
+    const btn = event.submitter;
+    const originalText = btn.innerText;
+    btn.disabled = true; 
+    btn.innerText = "Processing...";
+
     const userCred = await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
     await updateProfile(userCred.user, { displayName: nameInput.value });
-    await checkAndRedirect(userCred.user);
+    
+    await handleUserLogin(userCred.user);
+
   } catch (error) {
     console.error(error);
     alert("Gagal Register: " + error.message);
+    const btn = event.submitter;
+    btn.disabled = false;
+    btn.innerText = "Sign Up";
   }
 }
 
@@ -93,11 +101,20 @@ export async function loginUser(event) {
   if (!emailInput || !passwordInput) return;
 
   try {
+    const btn = event.submitter;
+    const originalText = btn.innerText;
+    btn.disabled = true; 
+    btn.innerText = "Logging in...";
+
     const userCred = await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-    await checkAndRedirect(userCred.user);
+    await handleUserLogin(userCred.user);
+    
   } catch (error) {
     console.error(error);
     alert("Email atau password salah!");
+    const btn = event.submitter;
+    btn.disabled = false;
+    btn.innerText = "Log In";
   }
 }
 
@@ -106,10 +123,10 @@ export async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        await checkAndRedirect(result.user);
+        await handleUserLogin(result.user);
     } catch (error) {
         console.error("Google Login Error:", error);
-        alert("Gagal login dengan Google: " + error.message);
+        alert("Gagal login dengan Google. Pastikan domain sudah diizinkan di Firebase Console.");
     }
 }
 
