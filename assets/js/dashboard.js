@@ -12,6 +12,7 @@ let currentUserName = "User";
 function loadDashboardData(uid) {
     const userRef = doc(db, "users", uid);
     
+    // 1. Listener Data User (Poin & Nama)
     onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -24,6 +25,7 @@ function loadDashboardData(uid) {
             if (dashboardPointsEl) dashboardPointsEl.textContent = points;
             if (welcomeNameEl) welcomeNameEl.textContent = currentUserName;
 
+            // Cek Referral
             if (data.redeemedReferral === false) {
                 const modalEl = document.getElementById('referralModal');
                 if (modalEl) {
@@ -39,10 +41,11 @@ function loadDashboardData(uid) {
     });
     
     loadActiveProjectsWidget(uid);
-    loadSidebarActivities(uid);
+    loadSidebarActivities(uid); 
     loadCurrentTaskWidget(uid); 
 }
 
+// 2. Render Lingkaran Proyek
 async function loadActiveProjectsWidget(uid) {
     const container = document.getElementById('activeProjectsContainer');
     if (!container) return;
@@ -79,11 +82,13 @@ async function loadActiveProjectsWidget(uid) {
     }
 }
 
+// 3. Render Aktivitas Sidebar (UPDATE: Limit 50 agar bisa discroll)
 function loadSidebarActivities(myUid) {
     const container = document.getElementById('activityListContainer');
     if (!container) return;
 
-    const q = query(collection(db, "activities"), orderBy("timestamp", "desc"), limit(4));
+    // Ubah limit(4) menjadi limit(50) untuk menampilkan lebih banyak history
+    const q = query(collection(db, "activities"), orderBy("timestamp", "desc"), limit(50));
 
     onSnapshot(q, (snapshot) => {
         container.innerHTML = "";
@@ -106,9 +111,6 @@ function loadSidebarActivities(myUid) {
             if (data.type === 'reward') { iconClass = "bi-gift-fill"; textClass = "#FFB547"; bgClass = "#FFF7E8"; }
             if (data.type === 'task') { iconClass = "bi-check-circle-fill"; textClass = "#05CD99"; bgClass = "#E6FAF5"; }
             if (data.type === 'project') { iconClass = "bi-folder-fill"; textClass = "#4318FF"; bgClass = "#F4F7FE"; }
-            
-            // Tambahan: Icon khusus Level Up
-            if (data.type === 'level_up') { iconClass = "bi-graph-up-arrow"; textClass = "#2B3674"; bgClass = "#E9EDF7"; }
 
             container.innerHTML += `
                 <div class="feed-item">
@@ -127,6 +129,7 @@ function loadSidebarActivities(myUid) {
     });
 }
 
+// 4. Render Current Task Widget
 async function loadCurrentTaskWidget(uid) {
     const taskTitleEl = document.getElementById('currentTaskTitle');
     const taskProgressEl = document.getElementById('currentTaskProgress');

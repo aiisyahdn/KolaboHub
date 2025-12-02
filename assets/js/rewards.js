@@ -11,7 +11,7 @@ let currentUid = null;
 let currentUserName = "User";
 
 const REWARD_CATALOG = [
-    { id: 'kopikenangan', name: 'Kopi Kenangan', desc: 'Voucher Diskon 20%', cost: 50, imageUrl: 'https://placehold.co/400x200/222/FFF?text=Kopi+Kenangan', color: '#FFB547' },
+    { id: 'kopikenangan', name: 'Kopi Kenangan', desc: 'Voucher Diskon 20%', cost: 50, imageUrl: 'assets/Images/kopken.png', color: '#FFB547' },
     { id: 'timezone', name: 'Timezone', desc: 'Saldo Bermain 50K', cost: 100, imageUrl: 'https://placehold.co/400x200/c21515/FFF?text=TIMEZONE', color: '#FF4747' },
     { id: 'spotify', name: 'Spotify Premium', desc: '1 Bulan Individual', cost: 200, imageUrl: 'https://placehold.co/400x200/1DB954/FFF?text=Spotify', color: '#1DB954' },
     { id: 'gopay', name: 'Saldo GoPay', desc: 'Cashback 25.000', cost: 150, imageUrl: 'https://placehold.co/400x200/00AED6/FFF?text=GoPay', color: '#00AED6' },

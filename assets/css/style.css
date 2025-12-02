@@ -152,6 +152,30 @@ body {
     color: var(--primary-color); display: flex; align-items: center; justify-content: center;
     font-size: 1.2rem; flex-shrink: 0;
 }
+#activityListContainer {
+    max-height: 400px; /* Batas tinggi, jika lebih akan scroll */
+    overflow-y: auto;  /* Aktifkan scroll vertikal */
+    padding-right: 10px; /* Jarak agar scrollbar tidak menempel konten */
+}
+
+/* Styling Scrollbar agar terlihat modern (Chrome/Safari/Edge) */
+#activityListContainer::-webkit-scrollbar {
+    width: 6px;
+}
+
+#activityListContainer::-webkit-scrollbar-track {
+    background: #f1f5f9; 
+    border-radius: 10px;
+}
+
+#activityListContainer::-webkit-scrollbar-thumb {
+    background: #cbd5e1; 
+    border-radius: 10px;
+}
+
+#activityListContainer::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; 
+}
 
 /* Form Controls */
 .form-control-modern {
@@ -294,14 +318,14 @@ body {
 
 .reward-brand-img {
     width: 100%;
-    height: 140px;
+    height: 165px;
     object-fit: cover;
-    opacity: 0.6; /* Supaya teks di atasnya terbaca */
+    opacity: 1; /* Supaya teks di atasnya terbaca */
     transition: opacity 0.3s;
 }
 
 .reward-card-brand:hover .reward-brand-img {
-    opacity: 0.3;
+    opacity: 0.1;
 }
 
 .reward-overlay {
