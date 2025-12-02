@@ -12,7 +12,6 @@ let currentUserName = "User";
 function loadDashboardData(uid) {
     const userRef = doc(db, "users", uid);
     
-    // 1. Listener Data User (Poin & Nama)
     onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -25,7 +24,6 @@ function loadDashboardData(uid) {
             if (dashboardPointsEl) dashboardPointsEl.textContent = points;
             if (welcomeNameEl) welcomeNameEl.textContent = currentUserName;
 
-            // Cek Referral
             if (data.redeemedReferral === false) {
                 const modalEl = document.getElementById('referralModal');
                 if (modalEl) {
@@ -40,148 +38,158 @@ function loadDashboardData(uid) {
         }
     });
     
-    loadActiveProjectsWidget(uid);
-    loadSidebarActivities();
-    loadCurrentTaskWidget(uid); // Fungsi Baru!
+    // Panggil fungsi dengan urutan yang benar
+    // Kita perlu load project list dulu sebelum load aktivitas, agar bisa difilter
+    loadProjectsAndActivities(uid);
+    loadCurrentTaskWidget(uid); 
 }
 
-// 2. Render Lingkaran Proyek (Updated Style)
-async function loadActiveProjectsWidget(uid) {
-    const container = document.getElementById('activeProjectsContainer');
-    if (!container) return;
-
-    const q = query(collection(db, "projects"), where("members", "array-contains", uid), limit(3));
+// Fungsi Gabungan: Load Proyek -> Load Aktivitas (agar filter bekerja)
+async function loadProjectsAndActivities(uid) {
+    const activeContainer = document.getElementById('activeProjectsContainer');
+    const feedContainer = document.getElementById('activityListContainer');
+    
+    // 1. Ambil Semua Proyek User (untuk Widget & Filter Feed)
+    const qProjects = query(collection(db, "projects"), where("members", "array-contains", uid));
     
     try {
-        const snapshot = await getDocs(q);
-        container.innerHTML = "";
+        const snapshot = await getDocs(qProjects);
+        let myProjectIds = []; // Simpan ID proyek user di sini
+        let projectsData = [];
 
-        if (snapshot.empty) {
-            container.innerHTML = `<div class="text-center text-muted small my-auto">Belum ada proyek aktif.</div>`;
-            return;
-        }
-
-        let i = 1;
         snapshot.forEach(doc => {
             const p = doc.data();
-            const circleClass = i === 1 ? 'circle-1' : (i === 2 ? 'circle-2' : 'circle-3');
-            
-            container.innerHTML += `
-                <div class="project-circle-item">
-                    <div class="circle-placeholder ${circleClass} shadow-sm">
-                        <i class="bi bi-folder2-open"></i>
-                    </div>
-                    <div class="project-name-small text-truncate px-1">${p.name}</div>
-                </div>
-            `;
-            i++;
+            myProjectIds.push(doc.id);
+            projectsData.push(p);
         });
+
+        // 2. Render Widget Active Projects (Ambil 3 teratas)
+        if (activeContainer) {
+            activeContainer.innerHTML = "";
+            if (projectsData.length === 0) {
+                activeContainer.innerHTML = `<div class="text-center text-muted small my-auto">Belum ada proyek aktif.</div>`;
+            } else {
+                // Ambil 3 saja
+                projectsData.slice(0, 3).forEach((p, index) => {
+                    const circleClass = index === 0 ? 'circle-1' : (index === 1 ? 'circle-2' : 'circle-3');
+                    activeContainer.innerHTML += `
+                        <div class="project-circle-item">
+                            <div class="circle-placeholder ${circleClass} shadow-sm">
+                                <i class="bi bi-folder2-open"></i>
+                            </div>
+                            <div class="project-name-small text-truncate px-1">${p.name}</div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // 3. Render Activity Feed (Filter based on myProjectIds OR myUid)
+        loadSidebarActivitiesFiltered(uid, myProjectIds);
+
     } catch (err) {
-        console.error(err);
-        container.innerHTML = `<div class="text-danger small text-center">Gagal memuat.</div>`;
+        console.error("Error loading dashboard data:", err);
     }
 }
 
-// 3. Render Aktivitas Sidebar (Updated dengan Nama User)
-function loadSidebarActivities() {
+// Fungsi Render Feed dengan Filter Manual (Client-side Filtering)
+function loadSidebarActivitiesFiltered(myUid, myProjectIds) {
     const container = document.getElementById('activityListContainer');
     if (!container) return;
 
-    const q = query(collection(db, "activities"), orderBy("timestamp", "desc"), limit(4));
+    // Ambil 50 aktivitas terbaru secara global
+    // (Firestore tidak bisa query OR yang kompleks, jadi kita filter di client)
+    const q = query(collection(db, "activities"), orderBy("timestamp", "desc"), limit(50));
 
     onSnapshot(q, (snapshot) => {
         container.innerHTML = "";
-        if (snapshot.empty) {
-            container.innerHTML = "<p class='text-muted small text-center'>Belum ada aktivitas.</p>";
-            return;
-        }
+        let count = 0;
+        const MAX_DISPLAY = 5; // Tampilkan 5 aktivitas saja
 
         snapshot.forEach(doc => {
+            if (count >= MAX_DISPLAY) return;
+
             const data = doc.data();
-            const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Now";
             
-            let iconClass = "bi-info-circle";
-            let bgClass = "#E9EDF7"; 
-            let textClass = "#2B3674";
+            // --- LOGIKA FILTER ---
+            // Tampilkan jika:
+            // 1. Aktivitas milik SAYA SENDIRI (userId == myUid)
+            // 2. ATAU Aktivitas terkait PROYEK SAYA (projectId ada di myProjectIds)
+            
+            const isMyActivity = data.userId === myUid;
+            const isMyProjectActivity = data.projectId && myProjectIds.includes(data.projectId);
 
-            if (data.type === 'reward') { iconClass = "bi-gift-fill"; textClass = "#FFB547"; bgClass = "#FFF7E8"; }
-            if (data.type === 'task') { iconClass = "bi-check-circle-fill"; textClass = "#05CD99"; bgClass = "#E6FAF5"; }
-            if (data.type === 'project') { iconClass = "bi-folder-fill"; textClass = "#4318FF"; bgClass = "#F4F7FE"; }
+            if (isMyActivity || isMyProjectActivity) {
+                
+                const time = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Now";
+                let iconClass = "bi-info-circle"; let bgClass = "#E9EDF7"; let textClass = "#2B3674";
+                let actorName = isMyActivity ? "Anda" : (data.userName || "Seseorang");
+                let fullMessage = `<strong>${actorName}</strong> ${data.text}`;
 
-            container.innerHTML += `
-                <div class="feed-item">
-                    <div class="feed-icon" style="background-color: ${bgClass}; color: ${textClass};">
-                        <i class="bi ${iconClass}"></i>
-                    </div>
-                    <div class="feed-content w-100">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-dark" style="font-size: 0.9rem;">${data.userName || 'User'}</span>
+                if (data.type === 'reward') { iconClass = "bi-gift-fill"; textClass = "#FFB547"; bgClass = "#FFF7E8"; }
+                if (data.type === 'task') { iconClass = "bi-check-circle-fill"; textClass = "#05CD99"; bgClass = "#E6FAF5"; }
+                if (data.type === 'project') { iconClass = "bi-folder-fill"; textClass = "#4318FF"; bgClass = "#F4F7FE"; }
+
+                container.innerHTML += `
+                    <div class="feed-item">
+                        <div class="feed-icon" style="background-color: ${bgClass}; color: ${textClass};">
+                            <i class="bi ${iconClass}"></i>
+                        </div>
+                        <div class="feed-content w-100">
+                            <p class="text-dark small mb-1" style="line-height: 1.4;">
+                                ${fullMessage}
+                            </p>
                             <small class="text-muted" style="font-size: 0.7rem;">${time}</small>
                         </div>
-                        <p class="text-secondary small mb-0" style="line-height: 1.4; font-size: 0.8rem;">
-                            ${data.text}
-                        </p>
                     </div>
-                </div>
-            `;
+                `;
+                count++;
+            }
         });
+
+        if (count === 0) {
+            container.innerHTML = "<p class='text-muted small text-center'>Belum ada aktivitas.</p>";
+        }
     });
 }
 
-// 4. FUNGSI BARU: Render Current Task Widget
-// Mencari tugas 'doing' pertama yang ditemukan dari proyek user
 async function loadCurrentTaskWidget(uid) {
     const taskTitleEl = document.getElementById('currentTaskTitle');
     const taskProgressEl = document.getElementById('currentTaskProgress');
     const taskProgressBar = document.getElementById('currentTaskProgressBar');
     const taskProjectEl = document.getElementById('currentTaskProject');
 
-    // Pastikan elemen ada di HTML (jika belum, harus ditambahkan ID-nya di index.html)
     if (!taskTitleEl) return; 
 
     try {
-        // Ambil semua proyek user
         const projectsQuery = query(collection(db, "projects"), where("members", "array-contains", uid));
         const projectsSnap = await getDocs(projectsQuery);
 
-        if (projectsSnap.empty) {
-            setNoTaskState();
-            return;
-        }
+        if (projectsSnap.empty) { setNoTaskState(); return; }
 
         let foundTask = null;
         let foundProjectName = "";
 
-        // Loop setiap proyek untuk cari tugas 'doing' (Agak berat tapi solusi termudah tanpa collectionGroup index)
-        // Idealnya menggunakan collectionGroup query jika index sudah di-setup di Firebase Console
         for (const projectDoc of projectsSnap.docs) {
             const tasksQuery = query(
                 collection(db, "projects", projectDoc.id, "tasks"), 
                 where("status", "==", "doing"),
-                where("userId", "==", uid), // Hanya tugas milik user ini (opsional) atau semua tugas tim
+                where("userId", "==", uid), 
                 limit(1)
             );
-            
-            // Catatan: Jika ingin menampilkan tugas tim, hapus `where("userId", "==", uid)`
-            // Di sini kita asumsikan "Current Task" adalah tugas yang sedang dikerjakan OLEH USER SAYA
             
             const tasksSnap = await getDocs(tasksQuery);
             if (!tasksSnap.empty) {
                 foundTask = tasksSnap.docs[0].data();
                 foundProjectName = projectDoc.data().name;
-                break; // Ketemu satu, stop searching
+                break; 
             }
         }
 
         if (foundTask) {
             taskTitleEl.textContent = foundTask.title;
             taskProjectEl.textContent = foundProjectName;
-            
-            // Logika Progress Simulasi:
-            // Todo = 0%, Doing = 50%, Done = 100%
-            // Karena ini 'doing', kita set 50% atau 75% biar terlihat progress
             const progressVal = "50%"; 
-            
             if(taskProgressEl) taskProgressEl.textContent = progressVal;
             if(taskProgressBar) taskProgressBar.style.width = progressVal;
         } else {
@@ -200,7 +208,6 @@ async function loadCurrentTaskWidget(uid) {
         if(taskProgressBar) taskProgressBar.style.width = "0%";
     }
 }
-
 
 function setupReferralLogic(uid, myName, modalInstance) {
     const btnClaim = document.getElementById('btnClaimReferral');
@@ -243,18 +250,8 @@ function setupReferralLogic(uid, myName, modalInstance) {
             try {
                 btnClaim.disabled = true; btnClaim.textContent = "...";
                 
-                // Tambah Points & Lifetime Points ke Pemilik Kode
-                await updateDoc(doc(db, "users", ownerId), { 
-                    points: increment(50),
-                    lifetimePoints: increment(50) 
-                });
-
-                // Tambah Points & Lifetime Points ke User Baru
-                await updateDoc(doc(db, "users", uid), { 
-                    points: increment(25),
-                    lifetimePoints: increment(25), 
-                    redeemedReferral: true 
-                });
+                await updateDoc(doc(db, "users", ownerId), { points: increment(50) });
+                await updateDoc(doc(db, "users", uid), { points: increment(25), redeemedReferral: true });
 
                 modalInstance.hide();
                 alert(`Sukses! +25 Poin untukmu.`);

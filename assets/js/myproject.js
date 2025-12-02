@@ -14,14 +14,11 @@ function generateProjectCode() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-// FUNGSI PENTING: Load Poin ke Navbar
 function loadNavbarPoints(uid) {
-    // Listen realtime ke dokumen user
     onSnapshot(doc(db, "users", uid), (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             const navbarPointsEl = document.getElementById('navbarPoints');
-            
             if (navbarPointsEl) {
                 navbarPointsEl.textContent = `${data.points || 0} Poin`;
             }
@@ -78,22 +75,14 @@ async function loadProjects(uid) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        window.location.href = "login.html";
-        return;
-    }
+    if (!user) { window.location.href = "login.html"; return; }
 
-    // Panggil Load Poin
     loadNavbarPoints(user.uid);
-    
-    // Panggil Load Project
     loadProjects(user.uid);
 
-    // Get Username for Activity Log
     const userSnap = await getDoc(doc(db, "users", user.uid));
     if(userSnap.exists()) currentUserName = userSnap.data().name;
 
-    // Event Listeners
     const btnCreate = document.getElementById("btnCreateProject");
     if (btnCreate) {
         btnCreate.addEventListener("click", async () => {
@@ -103,11 +92,15 @@ onAuthStateChanged(auth, async (user) => {
 
             try {
                 btnCreate.disabled = true; btnCreate.innerText = "...";
-                await addDoc(collection(db, "projects"), {
+                
+                const newProjectRef = await addDoc(collection(db, "projects"), {
                     name, description: desc, ownerId: user.uid, members: [user.uid],
                     projectCode: generateProjectCode(), createdAt: serverTimestamp()
                 });
-                await logActivity(user.uid, currentUserName, `Membuat proyek: ${name}`, "project");
+
+                // LOG DENGAN PROJECT ID (newProjectRef.id)
+                await logActivity(user.uid, currentUserName, `Membuat proyek baru: ${name}`, "project", newProjectRef.id);
+                
                 alert("Proyek berhasil dibuat!");
                 location.reload();
             } catch (e) { 
@@ -128,10 +121,15 @@ onAuthStateChanged(auth, async (user) => {
             
             if (snap.empty) return alert("Kode salah!");
             
-            snap.forEach(async (d) => {
-                if (d.data().members.includes(user.uid)) return alert("Sudah bergabung!");
-                await updateDoc(doc(db, "projects", d.id), { members: arrayUnion(user.uid) });
-                await logActivity(user.uid, currentUserName, `Bergabung ke proyek: ${d.data().name}`, "project");
+            snap.forEach(async (docRef) => {
+                const p = docRef.data();
+                if (p.members.includes(user.uid)) return alert("Sudah bergabung!");
+                
+                await updateDoc(doc(db, "projects", docRef.id), { members: arrayUnion(user.uid) });
+                
+                // LOG DENGAN PROJECT ID (docRef.id)
+                await logActivity(user.uid, currentUserName, `Bergabung ke proyek: ${p.name}`, "project", docRef.id);
+                
                 alert("Berhasil bergabung!");
                 location.reload();
             });

@@ -11,7 +11,6 @@ import { logActivity } from "./activity.js";
 let currentUid = null;
 let currentUserName = "User";
 
-// Data Dummy Katalog
 const REWARD_CATALOG = [
     { id: 'voucher-kopi', name: 'Voucher Kopi Rp25K', cost: 50, value: 'Nikmati kopi favoritmu.', imageUrl: 'https://placehold.co/300x200/FFB547/ffffff?text=KOPI' },
     { id: 'voucher-transport', name: 'Diskon Grab 50K', cost: 100, value: 'Perjalanan lebih hemat.', imageUrl: 'https://placehold.co/300x200/4318FF/ffffff?text=GRAB' },
@@ -30,8 +29,6 @@ function loadUserPoints(uid) {
             const data = docSnap.data();
             currentUserName = data.name || "User"; 
             const points = data.points || 0;
-            
-            // Update Poin di Header Rewards
             const pointsElement = document.getElementById('userPoints');
             if (pointsElement) {
                 pointsElement.textContent = points;
@@ -41,7 +38,6 @@ function loadUserPoints(uid) {
     });
 }
 
-// Cek apakah poin cukup, disable tombol jika kurang
 function checkRedeemAvailability(currentPoints) {
     document.querySelectorAll('.btn-redeem-modern').forEach(button => {
         const cost = parseInt(button.getAttribute('data-cost'));
@@ -71,7 +67,6 @@ export async function redeemReward(rewardId, cost) {
     if(!confirm(`Tukar ${cost} Poin untuk hadiah ini?`)) return;
 
     try {
-        // Kurangi Poin
         await updateDoc(userRef, {
             points: increment(-cost)
         });
@@ -82,23 +77,20 @@ export async function redeemReward(rewardId, cost) {
         
         alert(`Berhasil! Voucher ${rewardName} Anda: ${voucherCode}`);
 
-        // Log Aktivitas
-        await logActivity(currentUid, currentUserName, `Menukar ${cost} Poin: ${rewardName}`, "reward");
+        // Log Aktivitas (Project ID = null)
+        await logActivity(currentUid, currentUserName, `Menukar ${cost} Poin: ${rewardName}`, "reward", null);
         
     } catch (error) {
         console.error("Redeem failed:", error);
         alert("Gagal melakukan penukaran.");
     }
 }
-// Expose ke window agar bisa diklik dari HTML string
 window.redeemReward = redeemReward; 
 
-// Fungsi Render HTML Baru (Tanpa col-md-4)
 function renderRewardsCatalog() {
     const catalogContainer = document.getElementById('rewardsCatalog');
     if (!catalogContainer) return;
     
-    // Hapus class 'col-md-4' dan ganti struktur agar sesuai CSS Grid .reward-card
     catalogContainer.innerHTML = REWARD_CATALOG.map(reward => `
         <div class="reward-card">
             <img src="${reward.imageUrl}" class="reward-img" alt="${reward.name}">

@@ -13,7 +13,6 @@ let currentProjectName = "Proyek";
 
 // --- Helper Functions ---
 function calculateAchievements(totalPoints) {
-    // Level dihitung berdasarkan TOTAL POIN SEUMUR HIDUP (bukan saldo saat ini)
     const level = Math.floor(totalPoints / 50) + 1;
     const badges = [];
     if (totalPoints >= 10) badges.push("Quick Starter");
@@ -29,17 +28,13 @@ async function updateRewards(uid) {
     if (!userSnap.exists()) return;
 
     const data = userSnap.data();
-    
-    // Gunakan lifetimePoints jika ada, jika tidak fallback ke points
     const totalLifetimePoints = data.lifetimePoints !== undefined ? data.lifetimePoints : (data.points || 0);
-    
     const { level, badges } = calculateAchievements(totalLifetimePoints);
     
-    // Update Level jika naik
     if (data.level !== level || JSON.stringify(data.badges) !== JSON.stringify(badges)) {
         await updateDoc(userRef, { level, badges });
         if (data.level !== level) {
-            logActivity(uid, currentUserName, `naik ke Level ${level}!`, "reward");
+            logActivity(uid, currentUserName, `naik ke Level ${level}!`, "reward", null);
         }
     }
     loadProfile(); 
@@ -51,8 +46,8 @@ async function loadProfile() {
     currentUserName = d.name || "User";
 
     const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
-    setTxt("userPoints", d.points || 0); // Poin Saldo (Bisa berkurang)
-    setTxt("userLevel", d.level || 1);   // Level (Stabil)
+    setTxt("userPoints", d.points || 0);
+    setTxt("userLevel", d.level || 1);
     
     const badgeEl = document.getElementById("userBadges");
     if (badgeEl) {
@@ -62,7 +57,6 @@ async function loadProfile() {
 
 // --- LOGIKA STATUS TUGAS ---
 async function updateTaskStatus(projectId, taskId, currentStatus, title, isPointsAwarded = false) {
-    
     let nextStatus = currentStatus;
     if (currentStatus === "todo") nextStatus = "doing";
     else if (currentStatus === "doing") nextStatus = "done";
@@ -79,42 +73,34 @@ async function updateTaskStatus(projectId, taskId, currentStatus, title, isPoint
     if (nextStatus === "done" && currentStatus === "doing") {
         if (!isPointsAwarded) {
             const userRef = doc(db, "users", currentUid);
-            
-            // --- PERBAIKAN: Safety Check Lifetime Points ---
-            // Sebelum increment, pastikan lifetimePoints sudah ada.
-            // Jika belum ada, kita inisialisasi dengan poin saat ini agar tidak mulai dari 0.
             try {
                 const s = await getDoc(userRef);
-                if (s.exists()) {
-                    const d = s.data();
-                    if (d.lifetimePoints === undefined) {
-                        await updateDoc(userRef, { lifetimePoints: d.points || 0 });
-                    }
+                if (s.exists() && s.data().lifetimePoints === undefined) {
+                    await updateDoc(userRef, { lifetimePoints: s.data().points || 0 });
                 }
-            } catch (e) {
-                console.error("Gagal sinkronisasi lifetimePoints:", e);
-            }
-            // ------------------------------------------------
+            } catch (e) { console.error(e); }
 
-            // Tambah ke 'points' (Saldo) DAN 'lifetimePoints' (Reputasi)
-            await updateDoc(userRef, { 
-                points: increment(10),
-                lifetimePoints: increment(10) 
-            });
+            await updateDoc(userRef, { points: increment(10), lifetimePoints: increment(10) });
             
             const activityText = `+10 point menyelesaikan tugas "${title}" pada project "${currentProjectName}"`;
-            await logActivity(currentUid, currentUserName, activityText, "task");
             
-            await updateRewards(currentUid); // Cek kenaikan level
+            // LOG DENGAN PROJECT ID
+            await logActivity(currentUid, currentUserName, activityText, "task", projectId);
+            
+            await updateRewards(currentUid);
             updateData.isPointsAwarded = true; 
         }
+    }
+
+    // Log status change (Tanpa poin)
+    if (nextStatus === "done" && currentStatus === "doing" && isPointsAwarded) {
+         await logActivity(currentUid, currentUserName, `menyelesaikan tugas "${title}" pada project "${currentProjectName}"`, "task", projectId);
     }
 
     await updateDoc(taskRef, updateData);
     loadTasks(projectId);
 }
 
-// Update UI Progress Bar
 function updateProgressBar(total, done) {
     const bar = document.getElementById("projectProgressBar");
     const text = document.getElementById("progressText");
@@ -128,7 +114,6 @@ function updateProgressBar(total, done) {
     if(text) text.innerText = `${percent}% Completed`;
 }
 
-// Load Tasks
 async function loadTasks(pid) {
     const q = collection(db, "projects", pid, "tasks");
     const snap = await getDocs(q);
@@ -232,14 +217,6 @@ onAuthStateChanged(auth, async (user) => {
     currentProjectName = pSnap.data().name; 
     document.getElementById("projectName").innerText = currentProjectName;
     
-    // Perbaikan: Pastikan data user diperbaiki saat load pertama kali juga
-    const userRef = doc(db, "users", user.uid);
-    getDoc(userRef).then(snap => {
-        if(snap.exists() && snap.data().lifetimePoints === undefined) {
-             updateDoc(userRef, { lifetimePoints: snap.data().points || 0 });
-        }
-    });
-
     loadMembers(pSnap.data());
     loadTasks(projectId);
     loadProfile();
@@ -253,7 +230,8 @@ onAuthStateChanged(auth, async (user) => {
             await addDoc(collection(db, "projects", projectId, "tasks"), {
                 title: input.value, status: "todo", isPointsAwarded: false, createdAt: serverTimestamp(), userId: user.uid
             });
-            await logActivity(currentUid, currentUserName, `membuat tugas baru "${input.value}" pada project "${currentProjectName}"`, "task");
+            // LOG DENGAN PROJECT ID
+            await logActivity(currentUid, currentUserName, `membuat tugas baru "${input.value}" pada project "${currentProjectName}"`, "task", projectId);
             input.value = "";
             loadTasks(projectId);
         };

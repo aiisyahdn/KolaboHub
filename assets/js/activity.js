@@ -6,18 +6,20 @@ import {
 
 /**
  * Mencatat aktivitas baru ke Firestore.
- * @param {string} userId - UID pengguna yang melakukan aksi
+ * @param {string} userId - UID pengguna
  * @param {string} userName - Nama pengguna
- * @param {string} text - Deskripsi aktivitas (misal: "Menyelesaikan tugas X")
- * @param {string} type - Jenis aktivitas: 'task', 'reward', 'project' (untuk ikon)
+ * @param {string} text - Deskripsi aktivitas
+ * @param {string} type - 'task', 'reward', 'project'
+ * @param {string|null} projectId - ID Proyek (Opsional, jika ada)
  */
-export async function logActivity(userId, userName, text, type = "info") {
+export async function logActivity(userId, userName, text, type = "info", projectId = null) {
     try {
         await addDoc(collection(db, "activities"), {
             userId: userId,
             userName: userName,
             text: text,
             type: type,
+            projectId: projectId, // Field Baru
             timestamp: serverTimestamp()
         });
         console.log("Activity logged:", text);
