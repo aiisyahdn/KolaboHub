@@ -165,15 +165,160 @@ body {
 }
 .btn-primary-modern:hover { background: #3311CC; transform: translateY(-2px); }
 
-/* Reward Card */
-.reward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
-.reward-card {
-    background: white; border-radius: var(--card-radius); overflow: hidden;
-    box-shadow: var(--card-shadow); transition: transform 0.2s; display: flex; flex-direction: column;
+/* --- REWARDS PAGE SPECIFIC --- */
+/* Layout Grid Atas (Poin & History) */
+.rewards-top-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr; /* Poin lebih lebar sedikit */
+    gap: 30px;
+    margin-bottom: 40px;
+    align-items: start;
 }
-.reward-card:hover { transform: translateY(-5px); }
-.reward-img { width: 100%; height: 160px; object-fit: cover; }
-.reward-body { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+
+/* Card Poin (Hero) */
+.reward-hero-card {
+    background: linear-gradient(135deg, #F0F4FF 0%, #FFFFFF 100%);
+    border: 1px solid #E0E7FF;
+    border-radius: var(--card-radius);
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: var(--card-shadow);
+}
+
+.reward-hero-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: radial-gradient(#4318FF 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.05;
+    z-index: 0;
+}
+
+/* History Section */
+.history-card-container {
+    background: #FFFFFF;
+    border-radius: var(--card-radius);
+    padding: 25px;
+    box-shadow: var(--card-shadow);
+    height: 100%;
+    max-height: 400px; /* Batasi tinggi agar bisa discroll */
+    display: flex;
+    flex-direction: column;
+}
+
+.history-list {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 5px;
+}
+
+/* Scrollbar cantik untuk history */
+.history-list::-webkit-scrollbar { width: 5px; }
+.history-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; }
+
+.history-item {
+    background: #1B254B; /* Warna Gelap sesuai desain */
+    color: white;
+    border-radius: 16px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.history-item:hover {
+    transform: translateY(-2px);
+}
+
+/* Aksen visual pada kartu history */
+.history-item::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -10%;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(255,181,71,0.2) 0%, rgba(0,0,0,0) 70%);
+    border-radius: 50%;
+}
+
+.history-info h6 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    color: #fff;
+}
+
+.history-badge {
+    background: #FFB547;
+    color: #1B254B;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    display: inline-block;
+}
+
+/* Update Katalog Grid */
+.reward-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.reward-card-brand {
+    background: #111c44; /* Dark Brand Card */
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    color: white;
+    transition: transform 0.3s;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.reward-card-brand:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+.reward-brand-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    opacity: 0.6; /* Supaya teks di atasnya terbaca */
+    transition: opacity 0.3s;
+}
+
+.reward-card-brand:hover .reward-brand-img {
+    opacity: 0.3;
+}
+
+.reward-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(to top, #111c44 10%, transparent);
+}
+
+/* Responsif Mobile */
+@media (max-width: 991px) {
+    .rewards-top-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
 /* AUTH PAGES (Login/Register) */
 body.auth-body {

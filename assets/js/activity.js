@@ -9,17 +9,19 @@ import {
  * @param {string} userId - UID pengguna
  * @param {string} userName - Nama pengguna
  * @param {string} text - Deskripsi aktivitas
- * @param {string} type - 'task', 'reward', 'project'
- * @param {string|null} projectId - ID Proyek (Opsional, jika ada)
+ * @param {string} type - 'task', 'reward', 'project', 'level_up'
+ * @param {string|null} projectId - ID Proyek
+ * @param {object|null} metadata - Data tambahan (misal: {voucherCode: 'XYZ123'})
  */
-export async function logActivity(userId, userName, text, type = "info", projectId = null) {
+export async function logActivity(userId, userName, text, type = "info", projectId = null, metadata = null) {
     try {
         await addDoc(collection(db, "activities"), {
             userId: userId,
             userName: userName,
             text: text,
             type: type,
-            projectId: projectId, // Field Baru
+            projectId: projectId,
+            metadata: metadata, // Field Baru
             timestamp: serverTimestamp()
         });
         console.log("Activity logged:", text);
