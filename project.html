@@ -15,11 +15,17 @@
     <!-- Navbar Simple -->
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
         <a href="myproject.html" class="text-decoration-none text-muted fw-bold d-flex align-items-center">
-            <i class="bi bi-arrow-left-circle-fill fs-4 me-2 text-primary"></i> Back
+            <i class="bi bi-arrow-left-circle-fill fs-4 me-2 text-primary"></i> Back to Projects
         </a>
-        <button class="btn btn-outline-primary fw-bold rounded-pill px-4" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas">
-            <i class="bi bi-chat-dots-fill me-2"></i> Diskusi Tim
-        </button>
+        <div class="d-flex gap-2">
+            <!-- Tombol Add Member Baru -->
+            <button class="btn btn-outline-secondary fw-bold rounded-pill px-3" type="button" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                <i class="bi bi-person-plus-fill me-2"></i> Add Member
+            </button>
+            <button class="btn btn-outline-primary fw-bold rounded-pill px-4" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas">
+                <i class="bi bi-chat-dots-fill me-2"></i> Diskusi Tim
+            </button>
+        </div>
     </div>
 
     <!-- Header & Progress -->
@@ -30,7 +36,7 @@
         </div>
         <div class="text-end" style="width: 300px;">
             <div class="d-flex justify-content-between mb-1">
-                <span class="small fw-bold text-muted">Progress</span>
+                <span class="small fw-bold text-secondary">Progress</span>
                 <span class="small fw-bold text-primary" id="progressText">0%</span>
             </div>
             <div class="progress" style="height: 10px; border-radius: 10px;">
@@ -43,33 +49,35 @@
     <div class="kanban-board">
         
         <!-- To Do -->
-        <div class="card-modern bg-light border">
+        <div class="card-modern bg-white border">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold text-secondary mb-0"><i class="bi bi-circle me-2"></i> To Do</h6>
-                <span class="badge bg-white text-dark shadow-sm" id="countTodo">0</span>
+                <span class="badge bg-light text-dark shadow-sm border" id="countTodo">0</span>
             </div>
             <div id="todoList" class="min-vh-50 d-flex flex-column gap-2"></div>
             
             <div class="mt-3 pt-3 border-top">
-                <input id="newTask" class="form-control-modern mb-2 bg-white" placeholder="+ Add task...">
+                <!-- Input Task & Deadline -->
+                <input id="newTask" class="form-control-modern mb-2 bg-white border" placeholder="+ Add task...">
+                <input type="date" id="taskDeadline" class="form-control-modern mb-2 bg-white border" title="Deadline">
                 <button id="addTask" class="btn btn-primary-modern w-100 py-2 small">Add</button>
             </div>
         </div>
 
         <!-- Doing -->
-        <div class="card-modern bg-light border">
+        <div class="card-modern bg-white border">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold text-primary mb-0"><i class="bi bi-arrow-repeat me-2"></i> Doing</h6>
-                <span class="badge bg-white text-dark shadow-sm" id="countDoing">0</span>
+                <span class="badge bg-light text-dark shadow-sm border" id="countDoing">0</span>
             </div>
             <div id="doingList" class="min-vh-50 d-flex flex-column gap-2"></div>
         </div>
 
         <!-- Done -->
-        <div class="card-modern bg-light border">
+        <div class="card-modern bg-white border">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold text-success mb-0"><i class="bi bi-check-circle-fill me-2"></i> Done</h6>
-                <span class="badge bg-white text-dark shadow-sm" id="countDone">0</span>
+                <span class="badge bg-white text-dark shadow-sm border" id="countDone">0</span>
             </div>
             <div id="doneList" class="min-vh-50 d-flex flex-column gap-2"></div>
         </div>
@@ -78,7 +86,7 @@
 
     <!-- Members -->
     <div class="mt-5 pt-4 border-top">
-        <h6 class="fw-bold text-muted mb-3">Team Members</h6>
+        <h6 class="fw-bold text-secondary mb-3">Team Members</h6>
         <ul id="memberList" class="d-flex gap-3 list-unstyled flex-wrap"></ul>
     </div>
 
@@ -98,6 +106,27 @@
             <input type="text" id="chatInput" class="form-control border-0" placeholder="Ketik pesan...">
             <button class="btn btn-primary" id="btnSendChat"><i class="bi bi-send-fill"></i></button>
         </div>
+    </div>
+  </div>
+
+  <!-- Modal Add Member -->
+  <div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow rounded-4">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">Add New Member</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">Masukkan email pengguna yang ingin Anda tambahkan ke proyek ini.</p>
+          <input type="email" id="inputMemberEmail" class="form-control-modern mb-3" placeholder="user@example.com">
+          <div id="addMemberFeedback" class="small fw-bold text-center"></div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary-modern" id="btnAddMemberAction">Tambahkan</button>
+        </div>
+      </div>
     </div>
   </div>
   

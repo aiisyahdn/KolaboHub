@@ -1,16 +1,17 @@
 import { auth, db } from "./firebase-config.js";
 import {
   doc, getDoc, addDoc, updateDoc, collection, serverTimestamp,
-  query, getDocs, increment, onSnapshot, orderBy, limit
+  query, getDocs, increment, onSnapshot, orderBy, limit, where, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { logActivity } from "./activity.js"; // Pastikan path benar
+import { logActivity } from "./activity.js";
 
 const projectId = localStorage.getItem("currentProjectId");
 let currentUid = null; 
 let currentUserName = "User"; 
 let currentProjectName = "Proyek"; 
 
+// --- Helper Functions ---
 function calculateAchievements(totalPoints) {
     const level = Math.floor(totalPoints / 50) + 1;
     const badges = [];
@@ -33,8 +34,7 @@ async function updateRewards(uid) {
     if (data.level !== level || JSON.stringify(data.badges) !== JSON.stringify(badges)) {
         await updateDoc(userRef, { level, badges });
         if (data.level !== level) {
-            // UBAH TIPE JADI 'level_up' (Bukan 'reward')
-            logActivity(uid, currentUserName, `naik ke Level ${level}!`, "level_up", null);
+            logActivity(uid, currentUserName, `naik ke Level ${level}!`, "reward");
         }
     }
     loadProfile(); 
@@ -44,13 +44,18 @@ async function loadProfile() {
     if (!currentUid) return;
     const d = (await getDoc(doc(db, "users", currentUid))).data();
     currentUserName = d.name || "User";
+
     const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
     setTxt("userPoints", d.points || 0);
     setTxt("userLevel", d.level || 1);
+    
     const badgeEl = document.getElementById("userBadges");
-    if (badgeEl) badgeEl.innerHTML = (d.badges||[]).map(b => `<span class="badge bg-primary-kolabo me-1">${b}</span>`).join('') || "-";
+    if (badgeEl) {
+        badgeEl.innerHTML = (d.badges||[]).map(b => `<span class="badge bg-primary-kolabo me-1">${b}</span>`).join('') || "-";
+    }
 }
 
+// --- LOGIKA STATUS TUGAS ---
 async function updateTaskStatus(projectId, taskId, currentStatus, title, isPointsAwarded = false) {
     let nextStatus = currentStatus;
     if (currentStatus === "todo") nextStatus = "doing";
@@ -59,6 +64,7 @@ async function updateTaskStatus(projectId, taskId, currentStatus, title, isPoint
         if(!confirm("Kembalikan tugas ini ke To Do?")) return;
         nextStatus = "todo";
     }
+
     if (nextStatus === currentStatus) return;
 
     const taskRef = doc(db, "projects", projectId, "tasks", taskId);
@@ -74,15 +80,19 @@ async function updateTaskStatus(projectId, taskId, currentStatus, title, isPoint
                 }
             } catch (e) { console.error(e); }
 
-            await updateDoc(userRef, { points: increment(10), lifetimePoints: increment(10) });
+            await updateDoc(userRef, { 
+                points: increment(10),
+                lifetimePoints: increment(10) 
+            });
             
             const activityText = `+10 point menyelesaikan tugas "${title}" pada project "${currentProjectName}"`;
-            await logActivity(currentUid, currentUserName, activityText, "task", projectId);
+            await logActivity(currentUid, currentUserName, activityText, "task");
             
-            await updateRewards(currentUid);
+            await updateRewards(currentUid); 
             updateData.isPointsAwarded = true; 
         }
     }
+
     await updateDoc(taskRef, updateData);
     loadTasks(projectId);
 }
@@ -92,25 +102,59 @@ function updateProgressBar(total, done) {
     const text = document.getElementById("progressText");
     let percent = 0;
     if (total > 0) percent = Math.round((done / total) * 100);
-    if(bar) { bar.style.width = `${percent}%`; bar.className = percent === 100 ? "progress-bar bg-success" : "progress-bar bg-primary"; }
+
+    if(bar) {
+        bar.style.width = `${percent}%`;
+        bar.className = percent === 100 ? "progress-bar bg-success" : "progress-bar bg-primary";
+    }
     if(text) text.innerText = `${percent}% Completed`;
 }
 
+// Load Tasks (Updated with Deadline Display)
 async function loadTasks(pid) {
     const q = collection(db, "projects", pid, "tasks");
     const snap = await getDocs(q);
     const lists = { todo: document.getElementById("todoList"), doing: document.getElementById("doingList"), done: document.getElementById("doneList") };
     if (!lists.todo) return;
     Object.values(lists).forEach(el => el.innerHTML = "");
+
     let totalTasks = 0, doneTasks = 0, tasksArray = [];
     snap.forEach(d => { tasksArray.push({ ...d.data(), id: d.id }); });
+
     tasksArray.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+
     tasksArray.forEach(t => {
         totalTasks++;
         if (t.status === 'done') doneTasks++;
+
         const li = document.createElement("div"); li.className = "kanban-card"; 
         let statusIcon = t.status === 'done' ? '<i class="bi bi-check-circle-fill text-success"></i>' : (t.status === 'doing' ? '<i class="bi bi-arrow-repeat text-primary spin-icon"></i>' : '<i class="bi bi-circle text-secondary"></i>');
-        li.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-2"><span class="fw-bold text-dark" style="font-size: 0.95rem;">${t.title}</span>${t.status==='done' ? '<span class="badge bg-success-subtle text-success" style="font-size:0.6rem;">DONE</span>' : ''}</div><div class="d-flex justify-content-between align-items-center mt-2"><small class="text-muted" style="font-size:0.75rem">${statusIcon} ${t.status}</small></div>`;
+
+        // Format Deadline
+        let deadlineHtml = "";
+        if (t.deadline) {
+            const dateObj = new Date(t.deadline);
+            const formattedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            
+            // Cek overdue
+            const isOverdue = new Date() > dateObj && t.status !== 'done';
+            const badgeClass = isOverdue ? 'bg-danger-subtle text-danger' : 'bg-light text-muted';
+            const iconClass = isOverdue ? 'bi-exclamation-circle-fill' : 'bi-calendar-event';
+
+            deadlineHtml = `<span class="badge ${badgeClass} border ms-2" style="font-size: 0.65rem;"><i class="bi ${iconClass} me-1"></i>${formattedDate}</span>`;
+        }
+
+        li.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="fw-bold text-dark" style="font-size: 0.95rem;">${t.title}</span>
+                ${t.status==='done' ? '<span class="badge bg-success-subtle text-success" style="font-size:0.6rem;">DONE</span>' : ''}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <small class="text-muted" style="font-size:0.75rem">${statusIcon} ${t.status}</small>
+                ${deadlineHtml}
+            </div>
+        `;
+        
         li.style.cursor = "pointer";
         li.onclick = () => updateTaskStatus(pid, t.id, t.status, t.title, t.isPointsAwarded || false);
         if (lists[t.status]) lists[t.status].appendChild(li);
@@ -118,6 +162,7 @@ async function loadTasks(pid) {
     updateProgressBar(totalTasks, doneTasks);
 }
 
+// ... (loadChat function remains same) ...
 function loadChat(pid) {
     const chatContainer = document.getElementById("chatContainer");
     if (!chatContainer) return;
@@ -135,10 +180,12 @@ function loadChat(pid) {
             chatContainer.appendChild(msgDiv);
         });
     }, (error) => { console.log("Chat Error:", error); });
+
     const btnSend = document.getElementById("btnSendChat");
     const inputChat = document.getElementById("chatInput");
     const newBtnSend = btnSend.cloneNode(true);
     btnSend.parentNode.replaceChild(newBtnSend, btnSend);
+
     newBtnSend.addEventListener("click", async () => {
         const text = inputChat.value.trim();
         if (!text) return;
@@ -156,9 +203,89 @@ async function loadMembers(project) {
     const list = document.getElementById("memberList");
     if (!list) return;
     list.innerHTML = "";
-    for (let uid of project.members) {
+    // Hindari error jika members undefined
+    const members = project.members || [];
+    for (let uid of members) {
         const u = (await getDoc(doc(db, "users", uid))).data();
-        if (u) list.innerHTML += `<li class="d-flex align-items-center bg-white px-3 py-2 rounded border shadow-sm"><img src="https://placehold.co/30x30/4318FF/ffffff?text=${u.name.charAt(0)}" class="rounded-circle me-2" width="30"><span class="small fw-bold text-dark">${u.name}</span></li>`;
+        if (u) {
+             list.innerHTML += `
+            <li class="d-flex align-items-center bg-white px-3 py-2 rounded border shadow-sm">
+                <img src="https://placehold.co/30x30/4318FF/ffffff?text=${u.name.charAt(0)}" class="rounded-circle me-2" width="30">
+                <span class="small fw-bold text-dark">${u.name}</span>
+            </li>
+        `;
+        }
+    }
+}
+
+// --- LOGIKA ADD MEMBER (BARU) ---
+async function addMemberToProject() {
+    const inputEmail = document.getElementById("inputMemberEmail");
+    const feedback = document.getElementById("addMemberFeedback");
+    const email = inputEmail.value.trim();
+    const btnAdd = document.getElementById("btnAddMemberAction");
+
+    if (!email) {
+        feedback.textContent = "Email tidak boleh kosong.";
+        feedback.className = "small fw-bold text-center text-danger";
+        return;
+    }
+
+    btnAdd.disabled = true;
+    btnAdd.textContent = "Mencari...";
+    feedback.textContent = "";
+
+    try {
+        // Cari user berdasarkan email
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", email));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            feedback.textContent = "User dengan email tersebut tidak ditemukan.";
+            feedback.className = "small fw-bold text-center text-danger";
+            btnAdd.disabled = false;
+            btnAdd.textContent = "Tambahkan";
+            return;
+        }
+
+        // Ambil ID user pertama yang ditemukan
+        const newMemberDoc = querySnapshot.docs[0];
+        const newMemberId = newMemberDoc.id;
+        const newMemberData = newMemberDoc.data();
+
+        // Cek apakah sudah jadi member
+        const projectRef = doc(db, "projects", projectId);
+        const projectSnap = await getDoc(projectRef);
+        const projectData = projectSnap.data();
+
+        if (projectData.members.includes(newMemberId)) {
+            feedback.textContent = "User ini sudah menjadi anggota proyek.";
+            feedback.className = "small fw-bold text-center text-warning";
+        } else {
+            // Tambahkan ke array members
+            await updateDoc(projectRef, {
+                members: arrayUnion(newMemberId)
+            });
+
+            // Log Activity
+            await logActivity(currentUid, currentUserName, `menambahkan ${newMemberData.name} ke proyek "${currentProjectName}"`, "project", projectId);
+
+            feedback.textContent = "Berhasil menambahkan anggota!";
+            feedback.className = "small fw-bold text-center text-success";
+            inputEmail.value = "";
+            
+            // Refresh member list
+            loadMembers({ ...projectData, members: [...projectData.members, newMemberId] });
+        }
+
+    } catch (error) {
+        console.error("Error adding member:", error);
+        feedback.textContent = "Terjadi kesalahan saat menambahkan.";
+        feedback.className = "small fw-bold text-center text-danger";
+    } finally {
+        btnAdd.disabled = false;
+        btnAdd.textContent = "Tambahkan";
     }
 }
 
@@ -166,25 +293,48 @@ onAuthStateChanged(auth, async (user) => {
     if (!user) return window.location.href = "login.html";
     currentUid = user.uid;
     if (!projectId) return window.location.href = "myproject.html";
+
     const pSnap = await getDoc(doc(db, "projects", projectId));
     if (!pSnap.exists()) return window.location.href = "myproject.html";
-    currentProjectName = pSnap.data().name; 
+    
+    const projectData = pSnap.data();
+    currentProjectName = projectData.name; 
     document.getElementById("projectName").innerText = currentProjectName;
-    loadMembers(pSnap.data());
+    
+    loadMembers(projectData);
     loadTasks(projectId);
     loadProfile();
     loadChat(projectId);
+
+    // Setup Add Task dengan Deadline
     const btnAdd = document.getElementById("addTask");
     if (btnAdd) {
         btnAdd.onclick = async () => {
             const input = document.getElementById("newTask");
+            const inputDeadline = document.getElementById("taskDeadline");
+            
             if (!input.value.trim()) return;
+            
             await addDoc(collection(db, "projects", projectId, "tasks"), {
-                title: input.value, status: "todo", isPointsAwarded: false, createdAt: serverTimestamp(), userId: user.uid
+                title: input.value, 
+                status: "todo", 
+                deadline: inputDeadline.value || null, // Simpan Deadline
+                isPointsAwarded: false, 
+                createdAt: serverTimestamp(), 
+                userId: user.uid
             });
+            
             await logActivity(currentUid, currentUserName, `membuat tugas baru "${input.value}" pada project "${currentProjectName}"`, "task", projectId);
+            
             input.value = "";
+            inputDeadline.value = ""; // Reset date picker
             loadTasks(projectId);
         };
+    }
+
+    // Setup Add Member
+    const btnAddMember = document.getElementById("btnAddMemberAction");
+    if (btnAddMember) {
+        btnAddMember.addEventListener("click", addMemberToProject);
     }
 });
